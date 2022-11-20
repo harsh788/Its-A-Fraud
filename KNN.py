@@ -46,31 +46,23 @@ cols = X_test.select_dtypes(include=np.number).columns
 for i in cols:
     X_test[i] = (X_test[i] - X_test[i].mean())/X_test[i].std()
 
-# Hyperparameter tuning using RamdonizedSearchCv
-from scipy.stats import loguniform
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.linear_model import LogisticRegression
-# define evaluation
-cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-# define search space
-space = dict()
-space['solver'] = ['newton-cg', 'lbfgs', 'liblinear']
-# space['penalty'] = ['none', 'l1', 'l2', 'elasticnet']
-space['C'] = [100, 10, 1.0, 0.1, 0.01]
-# define search
-search = RandomizedSearchCV(LogisticRegression(), space, n_iter=500, scoring='accuracy', n_jobs=-1, cv=cv, random_state=1)
-# execute search
-result = search.fit(X_train, Y_train)
-# summarize result
-print('Best Score: %s' % result.best_score_)
-print('Best Hyperparameters: %s' % result.best_params_)
+# Performing hyperparameter tuning
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+metrics = ['euclidean','manhattan'] 
+neighbors = np.arange(3, 10)
+param_grid  = dict(metric=metrics, n_neighbors=neighbors)
+knn = KNeighborsClassifier()
+grid_search = GridSearchCV(knn, param_grid, cv=10, scoring='accuracy', refit=True)
+grid_search.fit(X_train, Y_train)
 
-# Using the parameters found above
-classifier = LogisticRegression(random_state = 42, max_iter=200, C=0.01, solver="lbfgs")
+print(grid_search.best_estimator_)
 
 # Calculating the output column 
+# y_pred = classifier.predict(X_test)
+classifier = KNeighborsClassifier()     # Add the hyperparameters here
+classifier.fit(X_train, Y_train)
 y_pred = classifier.predict(X_test)
 
 y_pred = pd.DataFrame(y_pred, columns=["isFraud"])
-y_pred.to_csv("../csv/Y_predict_LR.csv", index=True, index_label=["Id"])
+y_pred.to_csv("../csv/Y_predict_KNN.csv", index=True, index_label=["Id"])
